@@ -12,8 +12,8 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <PackageId>PeepingTom.Ipc</PackageId>
         <Title>PeepingTom.Ipc</Title>
-        <Authors>ascclemens</Authors>
-        <RepositoryUrl>https://git.anna.lgbt/ascclemens/PeepingTom</RepositoryUrl>
+        <Authors>lojewalo</Authors>
+        <RepositoryUrl>https://git.anna.lgbt/anna/PeepingTom</RepositoryUrl>
         <Description>Types for IPC with the Dalamud plugin Peeping Tom.</Description>
         <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
     </PropertyGroup>
