@@ -11,13 +11,13 @@ using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using PeepingTom.Ipc;
 using PeepingTom.Resources;
 
 namespace PeepingTom {
     internal class PluginUi : IDisposable {
-        private PeepingTomPlugin Plugin { get; }
+        private Plugin Plugin { get; }
 
         private uint? PreviousFocus { get; set; } = new();
 
@@ -37,7 +37,7 @@ namespace PeepingTom {
             set => this._settingsOpen = value;
         }
 
-        public PluginUi(PeepingTomPlugin plugin) {
+        public PluginUi(Plugin plugin) {
             this.Plugin = plugin;
         }
 
@@ -124,7 +124,7 @@ namespace PeepingTom {
 
         private void ShowSettings() {
             ImGui.SetNextWindowSize(new Vector2(700, 250));
-            var windowTitle = string.Format(Language.SettingsTitle, this.Plugin.Name);
+            var windowTitle = string.Format(Language.SettingsTitle, Plugin.Name);
             if (!ImGui.Begin($"{windowTitle}###ptom-settings", ref this._settingsOpen, ImGuiWindowFlags.NoResize)) {
                 ImGui.End();
                 return;
@@ -392,7 +392,7 @@ namespace PeepingTom {
             }
 
             ImGui.SetNextWindowSize(new Vector2(290, 195), ImGuiCond.FirstUseEver);
-            if (!ImGui.Begin(this.Plugin.Name, ref this._wantsOpen, flags)) {
+            if (!ImGui.Begin(Plugin.Name, ref this._wantsOpen, flags)) {
                 ImGui.End();
                 return;
             }
@@ -522,7 +522,7 @@ namespace PeepingTom {
                 } else {
                     var payload = new PlayerPayload(targeter.Name.TextValue, targeter.HomeWorldId);
                     Payload[] payloads = { payload };
-                    this.Plugin.ChatGui.PrintChat(new XivChatEntry {
+                    this.Plugin.ChatGui.Print(new XivChatEntry {
                         Message = new SeString(payloads),
                     });
                 }

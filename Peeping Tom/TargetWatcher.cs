@@ -6,17 +6,16 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Text;
-using Dalamud.Logging;
+using Dalamud.Plugin.Services;
 using PeepingTom.Ipc;
 using PeepingTom.Resources;
 
 namespace PeepingTom {
     internal class TargetWatcher : IDisposable {
-        private PeepingTomPlugin Plugin { get; }
+        private Plugin Plugin { get; }
 
         private Stopwatch UpdateWatch { get; } = new();
         private Stopwatch? SoundWatch { get; set; }
@@ -30,7 +29,7 @@ namespace PeepingTom {
 
         public IReadOnlyCollection<Targeter> PreviousTargeters => this.Previous;
 
-        public TargetWatcher(PeepingTomPlugin plugin) {
+        public TargetWatcher(Plugin plugin) {
             this.Plugin = plugin;
             this.UpdateWatch.Start();
 
@@ -45,7 +44,7 @@ namespace PeepingTom {
             this.Previous.Clear();
         }
 
-        private void OnFrameworkUpdate(Framework framework) {
+        private void OnFrameworkUpdate(IFramework framework1) {
             if (this.Plugin.InPvp) {
                 return;
             }
@@ -68,7 +67,7 @@ namespace PeepingTom {
                 try {
                     this.Plugin.IpcManager.SendNewTargeter(newTargeter);
                 } catch (Exception ex) {
-                    PluginLog.LogError(ex, "Failed to send IPC message");
+                    Plugin.Log.Error(ex, "Failed to send IPC message");
                 }
             }
 
@@ -76,7 +75,7 @@ namespace PeepingTom {
                 try {
                     this.Plugin.IpcManager.SendStoppedTargeting(stopped);
                 } catch (Exception ex) {
-                    PluginLog.LogError(ex, "Failed to send IPC message");
+                    Plugin.Log.Error(ex, "Failed to send IPC message");
                 }
             }
 
@@ -195,15 +194,15 @@ namespace PeepingTom {
                             Thread.Sleep(500);
                         }
                     } catch (Exception ex) {
-                        PluginLog.LogError(ex, "Exception playing sound");
+                        Plugin.Log.Error(ex, "Exception playing sound");
                     }
                 }
             }).Start();
         }
 
         private void SendError(string message) {
-            this.Plugin.ChatGui.PrintChat(new XivChatEntry {
-                Message = $"[{this.Plugin.Name}] {message}",
+            this.Plugin.ChatGui.Print(new XivChatEntry {
+                Message = $"[{Plugin.Name}] {message}",
                 Type = XivChatType.ErrorMessage,
             });
         }

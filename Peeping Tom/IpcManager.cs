@@ -8,12 +8,12 @@ using PeepingTom.Ipc.To;
 
 namespace PeepingTom {
     internal class IpcManager : IDisposable {
-        private PeepingTomPlugin Plugin { get; }
+        private Plugin Plugin { get; }
 
         private ICallGateProvider<IFromMessage, object> Provider { get; }
         private ICallGateSubscriber<IToMessage, object> Subscriber { get; }
 
-        internal IpcManager(PeepingTomPlugin plugin) {
+        internal IpcManager(Plugin plugin) {
             this.Plugin = plugin;
 
             this.Provider = this.Plugin.Interface.GetIpcProvider<IFromMessage, object>(IpcInfo.FromRegistrationName);

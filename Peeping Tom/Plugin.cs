@@ -1,58 +1,54 @@
 ﻿using Dalamud.Game.Command;
 using Dalamud.Plugin;
-using System;
 using System.Collections.Generic;
 using System.Globalization;
-using Dalamud.Data;
-using Dalamud.Game;
-using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Objects;
-using Dalamud.Game.Gui;
-using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
-using Dalamud.Logging;
+using Dalamud.Plugin.Services;
 using Lumina.Excel.GeneratedSheets;
 using PeepingTom.Resources;
 using XivCommon;
-using Condition = Dalamud.Game.ClientState.Conditions.Condition;
 
 namespace PeepingTom {
     // ReSharper disable once ClassNeverInstantiated.Global
-    public class PeepingTomPlugin : IDalamudPlugin {
-        public string Name => "Peeping Tom";
+    public class Plugin : IDalamudPlugin {
+        internal static string Name => "Peeping Tom";
+
+        [PluginService]
+        internal static IPluginLog Log { get; private set; } = null!;
 
         [PluginService]
         internal DalamudPluginInterface Interface { get; init; } = null!;
 
         [PluginService]
-        internal ChatGui ChatGui { get; init; } = null!;
+        internal IChatGui ChatGui { get; init; } = null!;
 
         [PluginService]
-        internal ClientState ClientState { get; init; } = null!;
+        internal IClientState ClientState { get; init; } = null!;
 
         [PluginService]
-        private CommandManager CommandManager { get; init; } = null!;
+        private ICommandManager CommandManager { get; init; } = null!;
 
         [PluginService]
-        internal Condition Condition { get; init; } = null!;
+        internal ICondition Condition { get; init; } = null!;
 
         [PluginService]
-        internal DataManager DataManager { get; init; } = null!;
+        internal IDataManager DataManager { get; init; } = null!;
 
         [PluginService]
-        internal Framework Framework { get; init; } = null!;
+        internal IFramework Framework { get; init; } = null!;
 
         [PluginService]
-        internal GameGui GameGui { get; init; } = null!;
+        internal IGameGui GameGui { get; init; } = null!;
 
         [PluginService]
-        internal ObjectTable ObjectTable { get; init; } = null!;
+        internal IObjectTable ObjectTable { get; init; } = null!;
 
         [PluginService]
-        internal TargetManager TargetManager { get; init; } = null!;
+        internal ITargetManager TargetManager { get; init; } = null!;
 
         [PluginService]
-        internal ToastGui ToastGui { get; init; } = null!;
+        internal IToastGui ToastGui { get; init; } = null!;
 
         internal Configuration Config { get; }
         internal PluginUi Ui { get; }
@@ -62,7 +58,7 @@ namespace PeepingTom {
 
         internal bool InPvp { get; private set; }
 
-        public PeepingTomPlugin() {
+        public Plugin() {
             this.Common = new XivCommonBase();
             this.Config = this.Interface.GetPluginConfig() as Configuration ?? new Configuration();
             this.Config.Initialize(this.Interface);
@@ -110,12 +106,12 @@ namespace PeepingTom {
             Language.Culture = new CultureInfo(langCode);
         }
 
-        private void OnTerritoryChange(object? sender, ushort e) {
+        private void OnTerritoryChange(ushort e) {
             try {
                 var territory = this.DataManager.GetExcelSheet<TerritoryType>()!.GetRow(e);
                 this.InPvp = territory?.IsPvpZone == true;
             } catch (KeyNotFoundException) {
-                PluginLog.Warning("Could not get territory for current zone");
+                Log.Warning("Could not get territory for current zone");
             }
         }
 
@@ -127,7 +123,7 @@ namespace PeepingTom {
             }
         }
 
-        private void OnLogin(object? sender, EventArgs args) {
+        private void OnLogin() {
             if (!this.Config.OpenOnLogin) {
                 return;
             }
@@ -135,7 +131,7 @@ namespace PeepingTom {
             this.Ui.WantsOpen = true;
         }
 
-        private void OnLogout(object? sender, EventArgs args) {
+        private void OnLogout() {
             this.Ui.WantsOpen = false;
             this.Watcher.ClearPrevious();
         }

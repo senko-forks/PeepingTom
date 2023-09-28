@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Plugin.Services;
 using Newtonsoft.Json;
 
 namespace PeepingTom.Ipc {
@@ -29,7 +29,7 @@ namespace PeepingTom.Ipc {
             this.When = when;
         }
 
-        public PlayerCharacter? GetPlayerCharacter(ObjectTable objectTable) {
+        public PlayerCharacter? GetPlayerCharacter(IObjectTable objectTable) {
             return objectTable.FirstOrDefault(actor => actor.ObjectId == this.ObjectId && actor is PlayerCharacter) as PlayerCharacter;
         }
     }
