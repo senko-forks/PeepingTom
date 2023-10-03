@@ -59,7 +59,7 @@ namespace PeepingTom {
         internal bool InPvp { get; private set; }
 
         public Plugin() {
-            this.Common = new XivCommonBase();
+            this.Common = new XivCommonBase(this.Interface);
             this.Config = this.Interface.GetPluginConfig() as Configuration ?? new Configuration();
             this.Config.Initialize(this.Interface);
             this.Watcher = new TargetWatcher(this);
