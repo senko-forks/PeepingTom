@@ -244,7 +244,7 @@ namespace PeepingTom {
 
                     var path = this.Plugin.Config.SoundPath ?? "";
                     ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - buttonSize.X);
-                    if (ImGui.InputText(Language.SettingsSoundPath, ref path, 1_000)) {
+                    if (ImGui.InputText("###sound-path", ref path, 1_000)) {
                         path = path.Trim();
                         this.Plugin.Config.SoundPath = path.Length == 0 ? null : path;
                         this.Plugin.Config.Save();
@@ -257,7 +257,7 @@ namespace PeepingTom {
                         if (ImGui.Button(FontAwesomeIcon.Folder.ToIconString())) {
                             this.FileDialogManager.OpenFileDialog(
                                 Language.SettingsSoundPath,
-                                "*.wav, *.mp3, *.aif, *.aiff, *.wma, *.aac",
+                                ".wav,.mp3,.aif,.aiff,.wma,.aac",
                                 (selected, selectedPath) => {
                                     if (!selected) {
                                         return;
