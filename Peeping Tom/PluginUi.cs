@@ -14,6 +14,8 @@ using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Utility;
 using PeepingTom.Ipc;
 using PeepingTom.Resources;
+using Dalamud.Interface.ImGuiFileDialog;
+using Dalamud.Interface;
 
 namespace PeepingTom {
     internal class PluginUi : IDisposable {
@@ -37,8 +39,11 @@ namespace PeepingTom {
             set => this._settingsOpen = value;
         }
 
+        private FileDialogManager FileDialogManager { get; }
+
         public PluginUi(Plugin plugin) {
             this.Plugin = plugin;
+            this.FileDialogManager = new FileDialogManager();
         }
 
         public void Dispose() {
@@ -123,6 +128,8 @@ namespace PeepingTom {
         }
 
         private void ShowSettings() {
+            this.FileDialogManager.Draw();
+
             ImGui.SetNextWindowSize(new Vector2(700, 250));
             var windowTitle = string.Format(Language.SettingsTitle, Plugin.Name);
             if (!ImGui.Begin($"{windowTitle}###ptom-settings", ref this._settingsOpen, ImGuiWindowFlags.NoResize)) {
@@ -226,11 +233,44 @@ namespace PeepingTom {
                         this.Plugin.Config.Save();
                     }
 
+                    ImGui.TextUnformatted(Language.SettingsSoundPath);
+                    Vector2 buttonSize;
+                    ImGui.PushFont(UiBuilder.IconFont);
+                    try {
+                        buttonSize = ImGuiHelpers.GetButtonSize(FontAwesomeIcon.Folder.ToIconString());
+                    } finally {
+                        ImGui.PopFont();
+                    }
+
                     var path = this.Plugin.Config.SoundPath ?? "";
+                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - buttonSize.X);
                     if (ImGui.InputText(Language.SettingsSoundPath, ref path, 1_000)) {
                         path = path.Trim();
                         this.Plugin.Config.SoundPath = path.Length == 0 ? null : path;
                         this.Plugin.Config.Save();
+                    }
+
+                    ImGui.SameLine();
+
+                    ImGui.PushFont(UiBuilder.IconFont);
+                    try {
+                        if (ImGui.Button(FontAwesomeIcon.Folder.ToIconString())) {
+                            this.FileDialogManager.OpenFileDialog(
+                                Language.SettingsSoundPath,
+                                "*.wav, *.mp3, *.aif, *.aiff, *.wma, *.aac",
+                                (selected, selectedPath) => {
+                                    if (!selected) {
+                                        return;
+                                    }
+
+                                    path = selectedPath.Trim();
+                                    this.Plugin.Config.SoundPath = path.Length == 0 ? null : path;
+                                    this.Plugin.Config.Save();
+                                }
+                            );
+                        }
+                    } finally {
+                        ImGui.PopFont();
                     }
 
                     ImGui.Text(Language.SettingsSoundPathHelp);
