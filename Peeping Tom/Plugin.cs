@@ -7,7 +7,6 @@ using Dalamud.IoC;
 using Dalamud.Plugin.Services;
 using Lumina.Excel.GeneratedSheets;
 using PeepingTom.Resources;
-using XivCommon;
 
 namespace PeepingTom {
     // ReSharper disable once ClassNeverInstantiated.Global
@@ -18,7 +17,7 @@ namespace PeepingTom {
         internal static IPluginLog Log { get; private set; } = null!;
 
         [PluginService]
-        internal DalamudPluginInterface Interface { get; init; } = null!;
+        internal IDalamudPluginInterface Interface { get; init; } = null!;
 
         [PluginService]
         internal IChatGui ChatGui { get; init; } = null!;
@@ -53,13 +52,11 @@ namespace PeepingTom {
         internal Configuration Config { get; }
         internal PluginUi Ui { get; }
         internal TargetWatcher Watcher { get; }
-        internal XivCommonBase Common { get; }
         internal IpcManager IpcManager { get; }
 
         internal bool InPvp { get; private set; }
 
         public Plugin() {
-            this.Common = new XivCommonBase(this.Interface);
             this.Config = this.Interface.GetPluginConfig() as Configuration ?? new Configuration();
             this.Config.Initialize(this.Interface);
             this.Watcher = new TargetWatcher(this);
@@ -99,7 +96,6 @@ namespace PeepingTom {
             this.IpcManager.Dispose();
             this.Ui.Dispose();
             this.Watcher.Dispose();
-            this.Common.Dispose();
         }
 
         private static void OnLanguageChange(string langCode) {

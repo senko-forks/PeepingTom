@@ -10,27 +10,31 @@ namespace PeepingTom.Ipc {
     public class Targeter {
         [JsonConverter(typeof(SeStringConverter))]
         public SeString Name { get; }
+
         public uint HomeWorldId { get; }
-        public uint ObjectId { get; }
+        public ulong GameObjectId { get; }
+        public uint EntityId { get; }
         public DateTime When { get; }
 
-        public Targeter(PlayerCharacter character) {
+        public Targeter(IPlayerCharacter character) {
             this.Name = character.Name;
             this.HomeWorldId = character.HomeWorld.Id;
-            this.ObjectId = character.ObjectId;
+            this.EntityId = character.EntityId;
+            this.GameObjectId = character.GameObjectId;
             this.When = DateTime.UtcNow;
         }
 
         [JsonConstructor]
-        public Targeter(SeString name, uint homeWorldId, uint objectId, DateTime when) {
+        public Targeter(SeString name, uint homeWorldId, uint entityId, ulong gameObjectId, DateTime when) {
             this.Name = name;
             this.HomeWorldId = homeWorldId;
-            this.ObjectId = objectId;
+            this.EntityId = entityId;
+            this.GameObjectId = gameObjectId;
             this.When = when;
         }
 
-        public PlayerCharacter? GetPlayerCharacter(IObjectTable objectTable) {
-            return objectTable.FirstOrDefault(actor => actor.ObjectId == this.ObjectId && actor is PlayerCharacter) as PlayerCharacter;
+        public IPlayerCharacter? GetPlayerCharacter(IObjectTable objectTable) {
+            return objectTable.FirstOrDefault(actor => actor.GameObjectId == this.GameObjectId && actor is IPlayerCharacter) as IPlayerCharacter;
         }
     }
 }

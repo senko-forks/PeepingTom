@@ -21,11 +21,11 @@ namespace PeepingTom {
         private Stopwatch? SoundWatch { get; set; }
         private int LastTargetAmount { get; set; }
 
-        private Targeter[] Current { get; set; } = Array.Empty<Targeter>();
+        private Targeter[] Current { get; set; } = [];
 
         public IReadOnlyCollection<Targeter> CurrentTargeters => this.Current;
 
-        private List<Targeter> Previous { get; } = new();
+        private List<Targeter> Previous { get; } = [];
 
         public IReadOnlyCollection<Targeter> PreviousTargeters => this.Previous;
 
@@ -63,7 +63,7 @@ namespace PeepingTom {
             // get targeters and set a copy so we can release the mutex faster
             var newCurrent = this.GetTargeting(this.Plugin.ObjectTable, player);
 
-            foreach (var newTargeter in newCurrent.Where(t => this.Current.All(c => c.ObjectId != t.ObjectId))) {
+            foreach (var newTargeter in newCurrent.Where(t => this.Current.All(c => c.GameObjectId != t.GameObjectId))) {
                 try {
                     this.Plugin.IpcManager.SendNewTargeter(newTargeter);
                 } catch (Exception ex) {
@@ -71,7 +71,7 @@ namespace PeepingTom {
                 }
             }
 
-            foreach (var stopped in this.Current.Where(t => newCurrent.All(c => c.ObjectId != t.ObjectId))) {
+            foreach (var stopped in this.Current.Where(t => newCurrent.All(c => c.GameObjectId != t.GameObjectId))) {
                 try {
                     this.Plugin.IpcManager.SendStoppedTargeting(stopped);
                 } catch (Exception ex) {
@@ -99,42 +99,42 @@ namespace PeepingTom {
 
             foreach (var targeter in targeting) {
                 // add the targeter to the previous list
-                if (this.Previous.Any(old => old.ObjectId == targeter.ObjectId)) {
-                    this.Previous.RemoveAll(old => old.ObjectId == targeter.ObjectId);
+                if (this.Previous.Any(old => old.GameObjectId == targeter.GameObjectId)) {
+                    this.Previous.RemoveAll(old => old.GameObjectId == targeter.GameObjectId);
                 }
 
                 this.Previous.Insert(0, targeter);
             }
 
             // only keep the configured number of previous targeters (ignoring ones that are currently targeting)
-            while (this.Previous.Count(old => targeting.All(actor => actor.ObjectId != old.ObjectId)) > this.Plugin.Config.NumHistory) {
+            while (this.Previous.Count(old => targeting.All(actor => actor.GameObjectId != old.GameObjectId)) > this.Plugin.Config.NumHistory) {
                 this.Previous.RemoveAt(this.Previous.Count - 1);
             }
         }
 
-        private Targeter[] GetTargeting(IEnumerable<GameObject> objects, GameObject player) {
+        private Targeter[] GetTargeting(IEnumerable<IGameObject> objects, IGameObject player) {
             return objects
-                .Where(obj => obj.TargetObjectId == player.ObjectId && obj is PlayerCharacter)
+                .Where(obj => obj.TargetObjectId == player.GameObjectId && obj is IPlayerCharacter)
                 // .Where(obj => Marshal.ReadByte(obj.Address + ActorOffsets.PlayerCharacterTargetActorId + 4) == 0)
-                .Cast<PlayerCharacter>()
+                .Cast<IPlayerCharacter>()
                 .Where(actor => this.Plugin.Config.LogParty || !InParty(actor))
                 .Where(actor => this.Plugin.Config.LogAlliance || !InAlliance(actor))
                 .Where(actor => this.Plugin.Config.LogInCombat || !InCombat(actor))
-                .Where(actor => this.Plugin.Config.LogSelf || actor.ObjectId != player.ObjectId)
+                .Where(actor => this.Plugin.Config.LogSelf || actor.GameObjectId != player.GameObjectId)
                 .Select(actor => new Targeter(actor))
                 .ToArray();
         }
 
-        private static byte GetStatus(GameObject actor) {
+        private static byte GetStatus(IGameObject actor) {
             var statusPtr = actor.Address + 0x1980; // updated 5.4
             return Marshal.ReadByte(statusPtr);
         }
 
-        private static bool InCombat(GameObject actor) => (GetStatus(actor) & 2) > 0;
+        private static bool InCombat(IGameObject actor) => (GetStatus(actor) & 2) > 0;
 
-        private static bool InParty(GameObject actor) => (GetStatus(actor) & 16) > 0;
+        private static bool InParty(IGameObject actor) => (GetStatus(actor) & 16) > 0;
 
-        private static bool InAlliance(GameObject actor) => (GetStatus(actor) & 32) > 0;
+        private static bool InAlliance(IGameObject actor) => (GetStatus(actor) & 32) > 0;
 
         private bool CanPlaySound() {
             if (!this.Plugin.Config.PlaySoundOnTarget) {
@@ -178,10 +178,9 @@ namespace PeepingTom {
                     return;
                 }
 
-                using var channel = new WaveChannel32(reader) {
-                    Volume = this.Plugin.Config.SoundVolume,
-                    PadWithZeroes = false,
-                };
+                using var channel = new WaveChannel32(reader);
+                channel.Volume = this.Plugin.Config.SoundVolume;
+                channel.PadWithZeroes = false;
 
                 using (reader) {
                     using var output = new DirectSoundOut(soundDevice.Guid);

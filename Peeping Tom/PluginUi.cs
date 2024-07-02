@@ -16,12 +16,13 @@ using PeepingTom.Ipc;
 using PeepingTom.Resources;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace PeepingTom {
     internal class PluginUi : IDisposable {
         private Plugin Plugin { get; }
 
-        private uint? PreviousFocus { get; set; } = new();
+        private ulong? PreviousFocus { get; set; } = new();
 
         private bool _wantsOpen;
 
@@ -115,9 +116,9 @@ namespace PeepingTom {
             }
 
             var targeting = this.Plugin.Watcher.CurrentTargeters
-                .Select(targeter => this.Plugin.ObjectTable.FirstOrDefault(obj => obj.ObjectId == targeter.ObjectId))
-                .Where(targeter => targeter is PlayerCharacter)
-                .Cast<PlayerCharacter>()
+                .Select(targeter => this.Plugin.ObjectTable.FirstOrDefault(obj => obj.GameObjectId == targeter.GameObjectId))
+                .Where(targeter => targeter is IPlayerCharacter)
+                .Cast<IPlayerCharacter>()
                 .ToArray();
             foreach (var targeter in targeting) {
                 this.MarkPlayer(targeter, this.Plugin.Config.TargetingColour, this.Plugin.Config.TargetingSize);
@@ -408,15 +409,15 @@ namespace PeepingTom {
 
             // to prevent looping over a subset of the actors repeatedly when multiple people are targeting,
             // create a dictionary for O(1) lookups by actor id
-            Dictionary<uint, GameObject>? objects = null;
+            Dictionary<ulong, IGameObject>? objects = null;
             if (targeting.Count + (previousTargeters?.Count ?? 0) > 1) {
-                var dict = new Dictionary<uint, GameObject>();
+                var dict = new Dictionary<ulong, IGameObject>();
                 foreach (var obj in this.Plugin.ObjectTable) {
-                    if (dict.ContainsKey(obj.ObjectId) || obj.ObjectKind != ObjectKind.Player) {
+                    if (dict.ContainsKey(obj.GameObjectId) || obj.ObjectKind != ObjectKind.Player) {
                         continue;
                     }
 
-                    dict.Add(obj.ObjectId, obj);
+                    dict.Add(obj.GameObjectId, obj);
                 }
 
                 objects = dict;
@@ -459,20 +460,20 @@ namespace PeepingTom {
                     // }
 
                     foreach (var targeter in targeting) {
-                        GameObject? obj = null;
-                        objects?.TryGetValue(targeter.ObjectId, out obj);
+                        IGameObject? obj = null;
+                        objects?.TryGetValue(targeter.GameObjectId, out obj);
                         this.AddEntry(targeter, obj, ref anyHovered);
                     }
 
                     if (this.Plugin.Config.KeepHistory) {
                         // get a list of the previous targeters that aren't currently targeting
                         var previous = (previousTargeters ?? new List<Targeter>())
-                            .Where(old => targeting.All(actor => actor.ObjectId != old.ObjectId))
+                            .Where(old => targeting.All(actor => actor.GameObjectId != old.GameObjectId))
                             .Take(this.Plugin.Config.NumHistory);
                         // add previous targeters to the list
                         foreach (var oldTargeter in previous) {
-                            GameObject? obj = null;
-                            objects?.TryGetValue(oldTargeter.ObjectId, out obj);
+                            IGameObject? obj = null;
+                            objects?.TryGetValue(oldTargeter.GameObjectId, out obj);
                             this.AddEntry(oldTargeter, obj, ref anyHovered, ImGuiSelectableFlags.Disabled);
                         }
                     }
@@ -485,7 +486,7 @@ namespace PeepingTom {
                     if (previousFocus == uint.MaxValue) {
                         this.Plugin.TargetManager.FocusTarget = null;
                     } else {
-                        var actor = this.Plugin.ObjectTable.FirstOrDefault(a => a.ObjectId == previousFocus);
+                        var actor = this.Plugin.ObjectTable.FirstOrDefault(a => a.GameObjectId == previousFocus);
                         // either target the actor if still present or target nothing
                         this.Plugin.TargetManager.FocusTarget = actor;
                     }
@@ -510,7 +511,7 @@ namespace PeepingTom {
             ImGui.EndTooltip();
         }
 
-        private void AddEntry(Targeter targeter, GameObject? obj, ref bool anyHovered, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None) {
+        private void AddEntry(Targeter targeter, IGameObject? obj, ref bool anyHovered, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None) {
             ImGui.BeginGroup();
 
             ImGui.Selectable(targeter.Name.TextValue, false, flags);
@@ -539,7 +540,7 @@ namespace PeepingTom {
             var left = hover && ImGui.IsMouseClicked(ImGuiMouseButton.Left);
             var right = hover && ImGui.IsMouseClicked(ImGuiMouseButton.Right);
 
-            obj ??= this.Plugin.ObjectTable.FirstOrDefault(a => a.ObjectId == targeter.ObjectId);
+            obj ??= this.Plugin.ObjectTable.FirstOrDefault(a => a.GameObjectId == targeter.GameObjectId);
 
             // don't count as hovered if the actor isn't here (clears focus target when hovering missing actors)
             if (obj != null) {
@@ -547,21 +548,23 @@ namespace PeepingTom {
             }
 
             if (this.Plugin.Config.FocusTargetOnHover && hover && obj != null) {
-                this.PreviousFocus ??= this.Plugin.TargetManager.FocusTarget?.ObjectId ?? uint.MaxValue;
+                this.PreviousFocus ??= this.Plugin.TargetManager.FocusTarget?.GameObjectId ?? uint.MaxValue;
                 this.Plugin.TargetManager.FocusTarget = obj;
             }
 
             if (left) {
                 if (this.Plugin.Config.OpenExamine && ImGui.GetIO().KeyAlt) {
                     if (obj != null) {
-                        this.Plugin.Common.Functions.Examine.OpenExamineWindow(obj);
+                        unsafe {
+                            AgentInspect.Instance()->ExamineCharacter(obj.EntityId);
+                        }
                     } else {
                         var error = string.Format(Language.ExamineErrorToast, targeter.Name);
                         this.Plugin.ToastGui.ShowError(error);
                     }
                 } else {
                     var payload = new PlayerPayload(targeter.Name.TextValue, targeter.HomeWorldId);
-                    Payload[] payloads = { payload };
+                    Payload[] payloads = [payload];
                     this.Plugin.ChatGui.Print(new XivChatEntry {
                         Message = new SeString(payloads),
                     });
@@ -571,7 +574,7 @@ namespace PeepingTom {
             }
         }
 
-        private void MarkPlayer(GameObject? player, Vector4 colour, float size) {
+        private void MarkPlayer(IGameObject? player, Vector4 colour, float size) {
             if (player == null) {
                 return;
             }
@@ -592,7 +595,7 @@ namespace PeepingTom {
             ImGui.PopClipRect();
         }
 
-        private PlayerCharacter? GetCurrentTarget() {
+        private IPlayerCharacter? GetCurrentTarget() {
             var player = this.Plugin.ClientState.LocalPlayer;
             if (player == null) {
                 return null;
@@ -604,8 +607,8 @@ namespace PeepingTom {
             }
 
             return this.Plugin.ObjectTable
-                .Where(actor => actor.ObjectId == targetId && actor is PlayerCharacter)
-                .Select(actor => actor as PlayerCharacter)
+                .Where(actor => actor.GameObjectId == targetId && actor is IPlayerCharacter)
+                .Select(actor => actor as IPlayerCharacter)
                 .FirstOrDefault();
         }
     }

@@ -8,7 +8,7 @@ namespace PeepingTom {
     internal class Configuration : IPluginConfiguration {
         public int Version { get; set; } = 1;
 
-        private DalamudPluginInterface Interface { get; set; } = null!;
+        private IDalamudPluginInterface Interface { get; set; } = null!;
 
         public bool MarkTargeted { get; set; }
 
@@ -52,7 +52,7 @@ namespace PeepingTom {
 
         public int PollFrequency { get; set; } = 100;
 
-        public void Initialize(DalamudPluginInterface pluginInterface) {
+        public void Initialize(IDalamudPluginInterface pluginInterface) {
             this.Interface = pluginInterface;
         }
 
