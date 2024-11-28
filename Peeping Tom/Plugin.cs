@@ -5,8 +5,8 @@ using System.Globalization;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.IoC;
 using Dalamud.Plugin.Services;
-using Lumina.Excel.GeneratedSheets;
 using PeepingTom.Resources;
+using Lumina.Excel.Sheets;
 
 namespace PeepingTom {
     // ReSharper disable once ClassNeverInstantiated.Global
@@ -104,8 +104,8 @@ namespace PeepingTom {
 
         private void OnTerritoryChange(ushort e) {
             try {
-                var territory = this.DataManager.GetExcelSheet<TerritoryType>()!.GetRow(e);
-                this.InPvp = territory?.IsPvpZone == true;
+                var territory = this.DataManager.GetExcelSheet<TerritoryType>().GetRow(e);
+                this.InPvp = territory.IsPvpZone == true;
             } catch (KeyNotFoundException) {
                 Log.Warning("Could not get territory for current zone");
             }
@@ -127,7 +127,7 @@ namespace PeepingTom {
             this.Ui.WantsOpen = true;
         }
 
-        private void OnLogout() {
+        private void OnLogout(int type, int code) {
             this.Ui.WantsOpen = false;
             this.Watcher.ClearPrevious();
         }

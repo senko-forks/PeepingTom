@@ -4,15 +4,15 @@
     "net8.0-windows7.0": {
       "DalamudPackager": {
         "type": "Direct",
-        "requested": "[2.1.13, )",
-        "resolved": "2.1.13",
-        "contentHash": "rMN1omGe8536f4xLMvx9NwfvpAc9YFFfeXJ1t4P4PE6Gu8WCIoFliR1sh07hM+bfODmesk/dvMbji7vNI+B/pQ=="
+        "requested": "[11.0.0, )",
+        "resolved": "11.0.0",
+        "contentHash": "bjT7XUlhIJSmsE/O76b7weUX+evvGQctbQB8aKXt94o+oPWxHpCepxAGMs7Thow3AzCyqWs7cOpp9/2wcgRRQA=="
       },
       "Fody": {
         "type": "Direct",
-        "requested": "[6.8.1, )",
-        "resolved": "6.8.1",
-        "contentHash": "pwk2/No1kL1ft+zMT2y0MvzB6W5cpkdOTj+0+T2u7LGJMTw37qtlnHzCSCyvwRiZVoJ/V/DE78eQ/WEcutUVDw=="
+        "requested": "[6.9.1, )",
+        "resolved": "6.9.1",
+        "contentHash": "Y33IOTstqsDaq2+1Cweu4s/V2iAAaRY6bPIANCre3Wlx9REc+ONyYmUdCc67Z12dy0N2Haq3t7QP4ANndsu/HA=="
       },
       "NAudio.Core": {
         "type": "Direct",
